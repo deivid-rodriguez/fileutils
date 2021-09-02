@@ -1164,6 +1164,13 @@ module FileUtils
       def fu_windows?; false end
     end
 
+    case RUBY_ENGINE
+    when "jruby"
+      def fu_jruby?; true end
+    else
+      def fu_jruby?; false end
+    end
+
     def fu_copy_stream0(src, dest, blksize = nil)   #:nodoc:
       IO.copy_stream(src, dest)
     end
@@ -1453,7 +1460,9 @@ module FileUtils
 
     def remove_file
       platform_support {
-        File.unlink path
+        with_all_user_permissions(File.dirname(path)) do
+          File.unlink path
+        end
       }
     end
 
@@ -1467,15 +1476,18 @@ module FileUtils
       first_time_p = true
       begin
         yield
-      rescue Errno::ENOENT
-        raise
       rescue => err
-        if first_time_p
-          first_time_p = false
-          begin
-            File.chmod 0700, path
-            retry
-          rescue SystemCallError
+        # `File.unlink` on a not-accessible but existent file raises
+        # `Errno::ENOENT` instead of `Errno::EACCES` on JRuby, so we need to try
+        # change permissions in that particular case too.
+        if !err.is_a?(Errno::ENOENT) || fu_jruby?
+          if first_time_p
+            first_time_p = false
+            begin
+              File.chmod 0700, path
+              retry
+            rescue SystemCallError
+            end
           end
         end
         raise err

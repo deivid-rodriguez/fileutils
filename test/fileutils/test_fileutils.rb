@@ -1796,6 +1796,19 @@ cd -
     assert_file_not_exist 'tmpdatadir'
   end
 
+  def test_rm_rf_no_permissions
+    check_singleton :rm_rf
+
+    return if /mswin|mingw/ =~ RUBY_PLATFORM
+
+    mkdir 'tmpdatadir'
+    touch 'tmpdatadir/tmpdata'
+    chmod "-x", 'tmpdatadir'
+    rm_rf 'tmpdatadir'
+
+    assert_file_not_exist 'tmpdatadir'
+  end
+
   def test_rmdir
     check_singleton :rmdir
 
