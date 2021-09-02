@@ -1473,7 +1473,7 @@ module FileUtils
         if first_time_p
           first_time_p = false
           begin
-            File.chmod 0700, path   # Windows does not have symlink
+            File.chmod 0700, path
             retry
           rescue SystemCallError
           end
