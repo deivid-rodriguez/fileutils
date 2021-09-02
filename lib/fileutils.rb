@@ -1459,6 +1459,11 @@ module FileUtils
 
     def platform_support
       return yield unless fu_windows?
+
+      with_all_user_permissions_for(path) { yield }
+    end
+
+    def with_all_user_permissions(path)
       first_time_p = true
       begin
         yield
@@ -1468,7 +1473,7 @@ module FileUtils
         if first_time_p
           first_time_p = false
           begin
-            File.chmod 0700, path()   # Windows does not have symlink
+            File.chmod 0700, path   # Windows does not have symlink
             retry
           rescue SystemCallError
           end
